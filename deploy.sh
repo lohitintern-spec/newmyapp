@@ -7,8 +7,8 @@ echo "[deploy] Working in $APP_DIR"
 cd "$APP_DIR"
 
 echo "[deploy] Building and (re)starting containers..."
-docker compose down || true
-docker compose up -d --build
+docker-compose down || true
+docker-compose up -d --build
 
 echo "[deploy] Pruning old images (safe)..."
 docker image prune -f || true
