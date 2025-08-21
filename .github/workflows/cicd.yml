@@ -1,0 +1,33 @@
+name: CI-CD to EC2
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare SSH key
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2_key
+          chmod 600 ~/.ssh/ec2_key
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync repo to EC2
+        run: |
+          rsync -az --delete -e "ssh -i ~/.ssh/ec2_key" ./ \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_PATH }}
+
+      - name: Remote deploy on EC2
+        run: |
+          ssh -i ~/.ssh/ec2_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "bash -lc 'sudo chmod +x ${{
+              secrets.EC2_PATH }}/deploy.sh && ${{
+              secrets.EC2_PATH }}/deploy.sh ${{
+              secrets.EC2_PATH }}'"
